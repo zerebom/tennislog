@@ -63,7 +63,7 @@ function MoodGraph({ activities }: { activities: Activity[] }) {
         {/* Dots */}
         {points.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r="4" fill={
-            p.rating === 'good' ? '#22C55E' : p.rating === 'neutral' ? '#F59E0B' : '#EF4444'
+            p.rating === 'good' ? 'var(--color-rating-good)' : p.rating === 'neutral' ? 'var(--color-rating-neutral)' : 'var(--color-rating-bad)'
           } />
         ))}
       </svg>

@@ -1,7 +1,10 @@
+import { useNavigate } from 'react-router-dom'
 import { useActivityStore } from '@/stores/useActivityStore'
+import { Button } from '@/components/ui/button'
 import type { Match } from '@/types'
 
 export function StatsPage() {
+  const navigate = useNavigate()
   const { activities } = useActivityStore()
   const matches = activities.filter((a): a is Match => a.type !== 'practice')
   const practices = activities.filter((a) => a.type === 'practice')
@@ -17,11 +20,12 @@ export function StatsPage() {
       {activities.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card px-6 py-12 text-center">
           <div className="mb-4 text-4xl">📊</div>
-          <p className="text-sm text-muted-foreground">
+          <p className="mb-6 text-sm text-muted-foreground">
             記録を追加すると
             <br />
             ここに統計が表示されます
           </p>
+          <Button onClick={() => navigate('/')}>最初の記録をする</Button>
         </div>
       ) : (
         <div className="space-y-4">

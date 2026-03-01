@@ -45,3 +45,40 @@ docs/                # プロジェクトドキュメント
 2. 相手情報は任意の付加データ（記録のコアループは相手データなしで成立）
 3. タイプ別に入力を最適化（練習/シングルス/ダブルス）
 4. データが溜まるほど価値が増す（Hookedモデル）
+
+## AI Agent Architecture
+
+### Lead Role
+
+リード（メインセッション）はタスク設計と管理だけを行う。コードは書かない。
+詳細: `docs/lead-role.md`
+
+### Session Startup Checklist
+
+1. steering/ 配下の全ファイルを確認
+2. `steering/issues.md` を読んで未解決の問題を把握
+3. `steering/tasklist.md` を読んで現在のPhaseを特定
+4. git status で未コミットの変更を確認
+5. 即座に次のアクションに着手する（人間に「進めますか？」と聞かない）
+
+### Custom Agents
+
+| Agent | 用途 | Mode |
+|-------|------|------|
+| feature-implementer | 機能実装 | acceptEdits |
+| code-reviewer | デザイン照合レビュー（読み取り専用） | default |
+| build-tester | 型チェック + ビルド | acceptEdits |
+| code-patrol | 品質パトロール（読み取り専用） | default |
+
+### Skills
+
+- `implement-feature`: React コンポーネント実装手順
+- `review-code`: design-direction.md との照合レビュー手順
+
+### Key Documents
+
+- `steering/issues.md` - 課題追跡（最重要。ここが作業の起点）
+- `steering/design-direction.md` - デザイン方針
+- `docs/conventions.md` - コーディング規約
+- `docs/agent-guide.md` - エージェント作業ガイド
+- `docs/lead-role.md` - リードの行動規範

@@ -12,9 +12,9 @@
   --color-surface-card: #FFFFFF;
   --color-text-primary: #1A2B1F;
   --color-text-secondary: #6B7280;
-  --color-rating-bad: #EF4444;
-  --color-rating-neutral: #F59E0B;
-  --color-rating-good: #22C55E;
+  --color-rating-bad: #D4483B;
+  --color-rating-neutral: #D97706;
+  --color-rating-good: #1B7A4A;
 }
 
 @theme inline {

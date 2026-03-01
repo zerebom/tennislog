@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useProfileStore } from '@/stores/useProfileStore'
+import type { UserProfile } from '@/types'
 
 type Step = 'welcome' | 'profile' | 'invite'
 
@@ -106,16 +107,23 @@ export function OnboardingPage() {
           最初の記録をして、あなたのテニスログを始めましょう
         </p>
         <div className="space-y-3">
-          <Button
-            onClick={() => {
-              completeOnboarding()
-              navigate('/record/singles')
-            }}
-            size="lg"
-            className="w-full"
-          >
-            記録する
-          </Button>
+          {([
+            { emoji: '🏋️', label: '練習・レッスン', path: '/record/practice' },
+            { emoji: '🎾', label: 'シングルス', path: '/record/singles' },
+            { emoji: '🎾🎾', label: 'ダブルス', path: '/record/doubles' },
+          ] as const).map(({ emoji, label, path }) => (
+            <button
+              key={path}
+              onClick={() => {
+                completeOnboarding()
+                navigate(path)
+              }}
+              className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors active:bg-accent"
+            >
+              <span className="text-2xl">{emoji}</span>
+              <span className="text-base font-medium">{label}</span>
+            </button>
+          ))}
           <Button
             variant="ghost"
             onClick={() => {
@@ -132,6 +140,3 @@ export function OnboardingPage() {
     </div>
   )
 }
-
-// Need import for type reference
-import type { UserProfile } from '@/types'
