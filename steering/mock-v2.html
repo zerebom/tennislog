@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TennisLog v2 - テニス記録アプリ モック</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#16A34A',
+        'primary-light': '#DCFCE7',
+        'primary-dark': '#15803D',
+        accent: '#F59E0B',
+        surface: '#F8FAFC',
+        'text-primary': '#1E293B',
+        'text-secondary': '#64748B',
+        'text-muted': '#94A3B8',
+        'border-light': '#E2E8F0',
+        win: '#16A34A',
+        lose: '#EF4444',
+      }
+    }
+  }
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: #F8FAFC; max-width: 430px; margin: 0 auto; min-height: 100dvh; position: relative; overflow-x: hidden; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .bottom-tab.active svg { color: #16A34A; }
+  .bottom-tab.active span { color: #16A34A; font-weight: 600; }
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  .fade-in-up { animation: fadeInUp 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .match-card { transition: transform 0.1s; }
+  .match-card:active { transform: scale(0.98); }
+  input:focus, textarea:focus { outline: none; border-color: #16A34A; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+  .modal-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+  .drawer { transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+  .drawer.closed { transform: translateY(100%); }
+  .chip.selected { background: #DCFCE7; border-color: #16A34A; color: #15803D; }
+  .rating-btn.selected { transform: scale(1.3); }
+  .rating-btn { transition: transform 0.15s ease; cursor: pointer; }
+  .rating-btn:hover { transform: scale(1.15); }
+  .scroll-chips { scroll-snap-type: x mandatory; scrollbar-width: none; overflow-x: auto; }
+  .scroll-chips::-webkit-scrollbar { display: none; }
+  .scroll-chips > * { scroll-snap-align: start; }
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+</style>
+</head>
+<body class="bg-surface text-text-primary">
+
+<!-- ================================================================ -->
+<!-- ONBOARDING: Screen 1 - Welcome                                   -->
+<!-- ================================================================ -->
+<div id="screen-onboarding" class="screen active">
+  <div id="onboard-step-1" class="fade-in">
+    <div class="flex flex-col items-center justify-center min-h-[100dvh] px-8 text-center">
+      <div class="w-24 h-24 rounded-full bg-primary-light flex items-center justify-center mb-6">
+        <span class="text-5xl">🎾</span>
+      </div>
+      <h1 class="text-2xl font-bold text-text-primary mb-2">試合を記録して、<br>上達を見える化しよう</h1>
+      <div class="mt-6 space-y-3 text-left w-full max-w-xs">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">⏱</span>
+          </div>
+          <p class="text-sm text-text-secondary">30秒で記録</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">📊</span>
+          </div>
+          <p class="text-sm text-text-secondary">勝率が見える</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center flex-shrink-0">
+            <span class="text-sm">👥</span>
+          </div>
+          <p class="text-sm text-text-secondary">対戦相手の情報を管理</p>
+        </div>
+      </div>
+      <button class="w-full max-w-xs mt-10 py-4 rounded-2xl bg-primary text-white font-bold text-base shadow-lg shadow-green-200/50 active:scale-[0.98] transition-transform" onclick="showOnboardStep(2)">
+        はじめる
+      </button>
+    </div>
+  </div>
+
+  <!-- ONBOARDING: Step 2 - Profile -->
+  <div id="onboard-step-2" class="fade-in-up" style="display:none">
+    <div class="px-6 pt-16 pb-8">
+      <div class="mb-8">
+        <p class="text-xs text-primary font-semibold mb-1">STEP 1 / 2</p>
+        <h2 class="text-xl font-bold">プロフィール設定</h2>
+        <p class="text-sm text-text-muted mt-1">あとから変更できます</p>
+      </div>
+      <div class="space-y-5">
+        <div>
+          <label class="text-xs text-text-muted font-medium mb-2 block">ニックネーム <span class="text-lose">*</span></label>
+          <input type="text" id="onboard-nickname" placeholder="例: ひぐち" value="ひぐち" class="w-full px-4 py-3 rounded-xl border border-border-light text-sm bg-white">
+        </div>
+        <div>
+          <label class="text-xs text-text-muted font-medium mb-2 block">テニス歴（任意）</label>
+          <div class="flex flex-wrap gap-2">
+            <button class="chip px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="selectExpChip(this)">1年未満</button>
+            <button class="chip px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="selectExpChip(this)">1-3年</button>
+            <button class="chip selected px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="selectExpChip(this)">3-5年</button>
+            <button class="chip px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="selectExpChip(this)">5年以上</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-text-muted font-medium mb-2 block">レベル感（任意）</label>
+          <div class="flex flex-wrap gap-2">
+            <button class="chip px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="selectLevelChip(this)">初級</button>
+            <button class="chip px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all selected" onclick="selectLevelChip(this)">中級</button>
+            <button class="chip px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="selectLevelChip(this)">中上級</button>
+            <button class="chip px-4 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="selectLevelChip(this)">上級</button>
+          </div>
+        </div>
+      </div>
+      <button class="w-full mt-10 py-4 rounded-2xl bg-primary text-white font-bold text-base shadow-lg shadow-green-200/50 active:scale-[0.98] transition-transform" onclick="showOnboardStep(3)">
+        次へ
+      </button>
+    </div>
+  </div>
+
+  <!-- ONBOARDING: Step 3 - First Record Nudge -->
+  <div id="onboard-step-3" class="fade-in-up" style="display:none">
+    <div class="flex flex-col items-center justify-center min-h-[100dvh] px-8 text-center">
+      <div class="w-20 h-20 rounded-full bg-primary-light flex items-center justify-center mb-5">
+        <svg width="36" height="36" fill="none" stroke="#16A34A" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <h2 class="text-xl font-bold mb-2">準備完了！</h2>
+      <p class="text-sm text-text-muted mb-8">最近テニスしましたか？<br>最初の1試合を記録してみましょう</p>
+      <button class="w-full max-w-xs py-4 rounded-2xl bg-primary text-white font-bold text-base shadow-lg shadow-green-200/50 active:scale-[0.98] transition-transform" onclick="finishOnboarding('record')">
+        試合を記録する
+      </button>
+      <button class="w-full max-w-xs py-3 mt-3 rounded-2xl text-text-muted text-sm font-medium" onclick="finishOnboarding('home')">
+        あとで
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- MAIN APP (after onboarding)                                       -->
+<!-- ================================================================ -->
+<div id="screen-app" class="screen">
+
+<!-- Status Bar -->
+<div class="bg-white px-6 py-2 flex justify-between items-center text-xs font-semibold text-text-primary sticky top-0 z-50">
+  <span>9:41</span>
+  <div class="flex gap-1 items-center">
+    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+  </div>
+</div>
+
+<!-- ============================== -->
+<!-- TAB: ホーム                     -->
+<!-- ============================== -->
+<div id="tab-home" class="tab-content active">
+  <div class="bg-white px-5 pt-4 pb-3 border-b border-border-light">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold text-text-primary">TennisLog</h1>
+        <p class="text-xs text-text-muted mt-0.5">🎾 記録して、上手くなる</p>
+      </div>
+      <div class="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center">
+        <span class="text-primary font-bold text-sm">H</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 月間サマリー -->
+  <div class="px-4 pt-4">
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-border-light">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-sm font-semibold text-text-secondary">3月のサマリー</h2>
+        <span class="text-xs text-text-muted">2026年</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2">
+        <div class="text-center">
+          <p class="text-2xl font-bold text-text-primary">8</p>
+          <p class="text-[10px] text-text-muted mt-0.5">試合数</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-win">62%</p>
+          <p class="text-[10px] text-text-muted mt-0.5">勝率</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-primary">5</p>
+          <p class="text-[10px] text-text-muted mt-0.5">練習回数</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-accent">3</p>
+          <p class="text-[10px] text-text-muted mt-0.5">連勝中🔥</p>
+        </div>
+      </div>
+      <!-- ミニカレンダー -->
+      <div class="mt-3 pt-3 border-t border-border-light">
+        <div class="flex gap-1 justify-center flex-wrap">
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">月</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">火</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">水</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">木</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">金</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">土</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">日</span>
+        </div>
+        <div class="flex gap-1 justify-center flex-wrap mt-1">
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center bg-primary-light text-primary font-bold" title="練習">24</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center bg-win text-white font-bold" title="勝ち">25</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">26</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center bg-primary-light text-primary font-bold" title="練習">27</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center bg-lose text-white font-bold" title="負け">28</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center bg-win text-white font-bold" title="勝ち">1</span>
+          <span class="w-6 h-6 rounded-full text-[10px] flex items-center justify-center text-text-muted">2</span>
+        </div>
+        <div class="flex items-center justify-center gap-4 mt-2">
+          <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-win"></div><span class="text-[9px] text-text-muted">勝ち</span></div>
+          <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-lose"></div><span class="text-[9px] text-text-muted">負け</span></div>
+          <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-primary-light border border-primary/30"></div><span class="text-[9px] text-text-muted">練習</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自己評価推移グラフ -->
+  <div class="px-4 pt-4">
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-border-light">
+      <h2 class="text-sm font-semibold text-text-secondary mb-3">調子の推移</h2>
+      <div class="relative h-28">
+        <!-- Y軸ラベル -->
+        <div class="absolute left-0 top-0 h-full flex flex-col justify-between text-[11px] w-6">
+          <span>😊</span>
+          <span>😐</span>
+          <span>😤</span>
+        </div>
+        <!-- グラフエリア -->
+        <div class="ml-8 h-full relative">
+          <!-- グリッドライン -->
+          <div class="absolute inset-0 flex flex-col justify-between">
+            <div class="border-b border-dashed border-border-light"></div>
+            <div class="border-b border-dashed border-border-light"></div>
+            <div class="border-b border-dashed border-border-light"></div>
+          </div>
+          <!-- 折れ線グラフ (SVG) -->
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 300 100" preserveAspectRatio="none">
+            <!-- 塗りつぶし -->
+            <path d="M0,66 L42,33 L84,50 L126,16 L168,33 L210,16 L252,16 L300,33 L300,100 L0,100 Z" fill="url(#gradient)" opacity="0.3"/>
+            <!-- ライン -->
+            <polyline points="0,66 42,33 84,50 126,16 168,33 210,16 252,16 300,33" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- ドット -->
+            <circle cx="0" cy="66" r="4" fill="#16A34A"/>
+            <circle cx="42" cy="33" r="4" fill="#16A34A"/>
+            <circle cx="84" cy="50" r="4" fill="#EF4444"/>
+            <circle cx="126" cy="16" r="4" fill="#16A34A"/>
+            <circle cx="168" cy="33" r="4" fill="#16A34A"/>
+            <circle cx="210" cy="16" r="4" fill="#16A34A"/>
+            <circle cx="252" cy="16" r="4" fill="#16A34A"/>
+            <circle cx="300" cy="33" r="4" fill="#16A34A"/>
+            <defs>
+              <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#16A34A" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#16A34A" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+      <!-- X軸ラベル -->
+      <div class="ml-8 flex justify-between mt-1">
+        <span class="text-[9px] text-text-muted">2/15</span>
+        <span class="text-[9px] text-text-muted">2/18</span>
+        <span class="text-[9px] text-text-muted">2/22</span>
+        <span class="text-[9px] text-text-muted">2/25</span>
+        <span class="text-[9px] text-text-muted">2/28</span>
+        <span class="text-[9px] text-text-muted">3/1</span>
+      </div>
+      <p class="text-[10px] text-primary font-medium mt-2 text-center">😊 が3試合連続！好調持続中</p>
+    </div>
+  </div>
+
+  <!-- 直近のアクティビティ（試合+練習統合） -->
+  <div class="px-4 pt-5 pb-24">
+    <h2 class="text-sm font-semibold text-text-secondary mb-3">直近のアクティビティ</h2>
+
+    <!-- 試合カード: WIN -->
+    <div class="match-card bg-white rounded-2xl p-4 shadow-sm border border-border-light mb-3 fade-in">
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-10 rounded-full bg-win"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">vs 田中さん</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-win font-semibold">WIN</span>
+            </div>
+            <p class="text-xs text-text-muted mt-0.5">3/1（土）シングルス</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-bold">6-4, 6-3</p>
+          <p class="text-sm">😊</p>
+        </div>
+      </div>
+      <div class="mt-2 pl-5">
+        <p class="text-xs text-text-secondary bg-surface rounded-lg px-3 py-1.5 inline-block">「サーブの調子が良かった」</p>
+      </div>
+    </div>
+
+    <!-- 練習カード -->
+    <div class="match-card bg-white rounded-2xl p-4 shadow-sm border border-border-light mb-3">
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-10 rounded-full bg-accent"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">🏋️ スクール</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold">練習</span>
+            </div>
+            <p class="text-xs text-text-muted mt-0.5">2/28（金）</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-bold text-text-secondary">1.5h</p>
+          <p class="text-sm">😊</p>
+        </div>
+      </div>
+      <div class="mt-2 pl-5 flex gap-1.5">
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-surface text-text-secondary border border-border-light">サーブ</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-surface text-text-secondary border border-border-light">ストローク</span>
+      </div>
+    </div>
+
+    <!-- 試合カード: LOSE -->
+    <div class="match-card bg-white rounded-2xl p-4 shadow-sm border border-border-light mb-3">
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-10 rounded-full bg-lose"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">vs 鈴木さん</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-lose font-semibold">LOSE</span>
+            </div>
+            <p class="text-xs text-text-muted mt-0.5">2/28（金）シングルス</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-bold">4-6, 3-6</p>
+          <p class="text-sm">😤</p>
+        </div>
+      </div>
+      <div class="mt-2 pl-5">
+        <p class="text-xs text-text-secondary bg-surface rounded-lg px-3 py-1.5 inline-block">「セカンドサーブを叩かれた」</p>
+      </div>
+    </div>
+
+    <!-- 練習カード -->
+    <div class="match-card bg-white rounded-2xl p-4 shadow-sm border border-border-light mb-3">
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-10 rounded-full bg-accent"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">🏋️ 自主練（壁打ち）</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold">練習</span>
+            </div>
+            <p class="text-xs text-text-muted mt-0.5">2/27（木）</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-bold text-text-secondary">0.5h</p>
+          <p class="text-sm">😐</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 試合カード: WIN -->
+    <div class="match-card bg-white rounded-2xl p-4 shadow-sm border border-border-light mb-3">
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-10 rounded-full bg-win"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">vs 佐藤さん</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-win font-semibold">WIN</span>
+            </div>
+            <p class="text-xs text-text-muted mt-0.5">2/25（火）シングルス</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-bold">6-2, 7-5</p>
+          <p class="text-sm">😊</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ダブルスカード -->
+    <div class="match-card bg-white rounded-2xl p-4 shadow-sm border border-border-light mb-3">
+      <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-10 rounded-full bg-win"></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">vs 中村・小林ペア</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-win font-semibold">WIN</span>
+            </div>
+            <p class="text-xs text-text-muted mt-0.5">2/22（土）ダブルス w/ 山本さん</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-bold">6-3, 6-4</p>
+          <p class="text-sm">😊</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== -->
+<!-- TAB: 記録（タイプ選択から）      -->
+<!-- ============================== -->
+<div id="tab-record" class="tab-content">
+
+  <!-- Step 0: 記録タイプ選択 -->
+  <div id="record-type-select" class="fade-in">
+    <div class="bg-white px-5 pt-4 pb-3 border-b border-border-light">
+      <h1 class="text-lg font-bold">記録する</h1>
+      <p class="text-xs text-text-muted mt-0.5">今日は何をした？</p>
+    </div>
+    <div class="px-4 pt-6 space-y-3">
+      <button class="w-full bg-white rounded-2xl p-5 shadow-sm border border-border-light flex items-center gap-4 active:scale-[0.98] transition-transform" onclick="showRecordForm('practice')">
+        <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center text-2xl">🏋️</div>
+        <div class="text-left">
+          <p class="text-base font-semibold">練習・レッスン</p>
+          <p class="text-xs text-text-muted mt-0.5">スクール、自主練、壁打ちなど</p>
+        </div>
+        <svg class="ml-auto flex-shrink-0" width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="w-full bg-white rounded-2xl p-5 shadow-sm border border-border-light flex items-center gap-4 active:scale-[0.98] transition-transform" onclick="showRecordForm('singles')">
+        <div class="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center text-2xl">🎾</div>
+        <div class="text-left">
+          <p class="text-base font-semibold">シングルス</p>
+          <p class="text-xs text-text-muted mt-0.5">1対1の試合を記録</p>
+        </div>
+        <svg class="ml-auto flex-shrink-0" width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="w-full bg-white rounded-2xl p-5 shadow-sm border border-border-light flex items-center gap-4 active:scale-[0.98] transition-transform" onclick="showRecordForm('doubles')">
+        <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl">🎾🎾</div>
+        <div class="text-left">
+          <p class="text-base font-semibold">ダブルス</p>
+          <p class="text-xs text-text-muted mt-0.5">ペアでの試合を記録</p>
+        </div>
+        <svg class="ml-auto flex-shrink-0" width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 練習記録フォーム                              -->
+  <!-- ============================================ -->
+  <div id="record-practice" class="fade-in-up" style="display:none">
+    <div class="bg-white px-5 pt-4 pb-3 border-b border-border-light flex items-center gap-3">
+      <button onclick="backToTypeSelect()" class="text-text-muted">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 class="text-lg font-bold">🏋️ 練習を記録</h1>
+    </div>
+    <div class="px-4 pt-4 pb-4 space-y-5">
+
+      <!-- 練習タイプ -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">何をやった？</label>
+        <div class="flex flex-wrap gap-2">
+          <button class="chip selected px-3.5 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">🎯 サーブ</button>
+          <button class="chip selected px-3.5 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">💪 ストローク</button>
+          <button class="chip px-3.5 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">🏐 ボレー</button>
+          <button class="chip px-3.5 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">🏃 フットワーク</button>
+          <button class="chip px-3.5 py-2 rounded-full text-sm bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">⚔️ 試合形式</button>
+        </div>
+      </div>
+
+      <!-- 調子（自己評価） -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-3 block">今日の調子は？</label>
+        <div class="flex justify-center gap-8">
+          <button class="rating-btn text-3xl" onclick="selectRating(this, 'bad')" data-rating="bad">😤</button>
+          <button class="rating-btn text-3xl" onclick="selectRating(this, 'neutral')" data-rating="neutral">😐</button>
+          <button class="rating-btn text-3xl selected" onclick="selectRating(this, 'good')" data-rating="good">😊</button>
+        </div>
+        <p class="text-center text-xs text-text-muted mt-2" id="practice-rating-label">いい感じ！</p>
+      </div>
+
+      <!-- メモ -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">メモ（任意）</label>
+        <textarea rows="2" placeholder="今日の練習の気づき..." class="w-full p-3 rounded-xl border border-border-light text-sm resize-none bg-white">スライスサーブのトスを前に出す意識。だいぶ安定してきた</textarea>
+      </div>
+
+      <button class="w-full py-4 rounded-2xl bg-primary text-white font-bold text-base shadow-lg shadow-green-200/50 active:scale-[0.98] transition-transform" onclick="saveAndShowInsight('practice')">
+        記録する
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- シングルス記録フォーム                         -->
+  <!-- ============================================ -->
+  <div id="record-singles" class="fade-in-up" style="display:none">
+    <div class="bg-white px-5 pt-4 pb-3 border-b border-border-light flex items-center gap-3">
+      <button onclick="backToTypeSelect()" class="text-text-muted">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 class="text-lg font-bold">🎾 シングルスを記録</h1>
+    </div>
+    <div class="px-4 pt-4 pb-4 space-y-5">
+
+      <!-- スコア -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">スコア</label>
+        <div class="bg-white rounded-2xl border border-border-light p-3">
+          <div class="flex items-end gap-2">
+            <div class="flex-1 text-center">
+              <p class="text-[10px] text-text-muted mb-1">Set 1</p>
+              <div class="flex items-center justify-center gap-1">
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option></select>
+                <span class="text-sm font-bold text-text-muted">-</span>
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option></select>
+              </div>
+            </div>
+            <div class="flex-1 text-center">
+              <p class="text-[10px] text-text-muted mb-1">Set 2</p>
+              <div class="flex items-center justify-center gap-1">
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option></select>
+                <span class="text-sm font-bold text-text-muted">-</span>
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              </div>
+            </div>
+            <button class="flex-shrink-0 w-11 h-11 rounded-lg border border-dashed border-border-light flex items-center justify-center text-text-muted">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 調子（自己評価） -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-3 block">今日の調子は？</label>
+        <div class="flex justify-center gap-8">
+          <button class="rating-btn text-3xl" onclick="selectRating(this, 'bad')" data-rating="bad">😤</button>
+          <button class="rating-btn text-3xl" onclick="selectRating(this, 'neutral')" data-rating="neutral">😐</button>
+          <button class="rating-btn text-3xl selected" onclick="selectRating(this, 'good')" data-rating="good">😊</button>
+        </div>
+        <p class="text-center text-xs text-text-muted mt-2">いい感じ！</p>
+      </div>
+
+      <!-- 相手（任意） -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">対戦相手（任意）</label>
+        <div class="flex gap-2 overflow-x-auto pb-1 scroll-chips">
+          <button class="chip selected flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-border-light text-sm transition-all" onclick="toggleChip(this)">
+            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">田</div>
+            田中さん
+          </button>
+          <button class="chip flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-border-light text-sm transition-all" onclick="toggleChip(this)">
+            <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-[10px]">鈴</div>
+            鈴木さん
+          </button>
+          <button class="chip flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-border-light text-sm transition-all" onclick="toggleChip(this)">
+            <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-[10px]">佐</div>
+            佐藤さん
+          </button>
+          <button class="chip flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border-2 border-dashed border-border-light text-text-muted text-sm">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            新規
+          </button>
+        </div>
+      </div>
+
+      <!-- メモ -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">メモ（任意）</label>
+        <div class="flex flex-wrap gap-1.5 mb-2">
+          <button class="chip px-2.5 py-1 rounded-full text-[11px] bg-white border border-border-light text-text-secondary transition-all selected" onclick="toggleChip(this)">サーブ好調</button>
+          <button class="chip px-2.5 py-1 rounded-full text-[11px] bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">リターンミス</button>
+          <button class="chip px-2.5 py-1 rounded-full text-[11px] bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">ネットプレー◎</button>
+          <button class="chip px-2.5 py-1 rounded-full text-[11px] bg-white border border-border-light text-text-secondary transition-all" onclick="toggleChip(this)">メンタル崩れた</button>
+        </div>
+        <textarea rows="2" placeholder="自由メモ..." class="w-full p-3 rounded-xl border border-border-light text-sm resize-none bg-white">サーブの調子が良かった。リターンゲームも集中できた</textarea>
+      </div>
+
+      <button class="w-full py-4 rounded-2xl bg-primary text-white font-bold text-base shadow-lg shadow-green-200/50 active:scale-[0.98] transition-transform" onclick="saveAndShowInsight('singles')">
+        記録する
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ダブルス記録フォーム                           -->
+  <!-- ============================================ -->
+  <div id="record-doubles" class="fade-in-up" style="display:none">
+    <div class="bg-white px-5 pt-4 pb-3 border-b border-border-light flex items-center gap-3">
+      <button onclick="backToTypeSelect()" class="text-text-muted">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 class="text-lg font-bold">🎾🎾 ダブルスを記録</h1>
+    </div>
+    <div class="px-4 pt-4 pb-4 space-y-5">
+
+      <!-- スコア -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">スコア</label>
+        <div class="bg-white rounded-2xl border border-border-light p-3">
+          <div class="flex items-end gap-2">
+            <div class="flex-1 text-center">
+              <p class="text-[10px] text-text-muted mb-1">Set 1</p>
+              <div class="flex items-center justify-center gap-1">
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option></select>
+                <span class="text-sm font-bold text-text-muted">-</span>
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+              </div>
+            </div>
+            <div class="flex-1 text-center">
+              <p class="text-[10px] text-text-muted mb-1">Set 2</p>
+              <div class="flex items-center justify-center gap-1">
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option></select>
+                <span class="text-sm font-bold text-text-muted">-</span>
+                <select class="appearance-none w-11 h-11 text-center text-lg font-bold bg-surface rounded-lg border border-border-light"><option>0</option><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option></select>
+              </div>
+            </div>
+            <button class="flex-shrink-0 w-11 h-11 rounded-lg border border-dashed border-border-light flex items-center justify-center text-text-muted">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 調子（自己評価） -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-3 block">今日の調子は？</label>
+        <div class="flex justify-center gap-8">
+          <button class="rating-btn text-3xl" onclick="selectRating(this, 'bad')" data-rating="bad">😤</button>
+          <button class="rating-btn text-3xl" onclick="selectRating(this, 'neutral')" data-rating="neutral">😐</button>
+          <button class="rating-btn text-3xl selected" onclick="selectRating(this, 'good')" data-rating="good">😊</button>
+        </div>
+        <p class="text-center text-xs text-text-muted mt-2">いい感じ！</p>
+      </div>
+
+      <!-- パートナー（任意） -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">パートナー（任意）</label>
+        <div class="flex gap-2 overflow-x-auto pb-1 scroll-chips">
+          <button class="chip selected flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-border-light text-sm transition-all" onclick="toggleChip(this)">
+            <div class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-[10px]">山</div>
+            山本さん
+          </button>
+          <button class="chip flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-border-light text-sm transition-all" onclick="toggleChip(this)">
+            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">田</div>
+            田中さん
+          </button>
+          <button class="chip flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border-2 border-dashed border-border-light text-text-muted text-sm">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            新規
+          </button>
+        </div>
+      </div>
+
+      <!-- メモ -->
+      <div>
+        <label class="text-xs text-text-muted font-medium mb-2 block">メモ（任意）</label>
+        <textarea rows="2" placeholder="自由メモ..." class="w-full p-3 rounded-xl border border-border-light text-sm resize-none bg-white">前衛のポーチが効いた。山本さんのサーブが安定してた</textarea>
+      </div>
+
+      <button class="w-full py-4 rounded-2xl bg-primary text-white font-bold text-base shadow-lg shadow-green-200/50 active:scale-[0.98] transition-transform" onclick="saveAndShowInsight('doubles')">
+        記録する
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 記録完了 + インサイト                          -->
+  <!-- ============================================ -->
+  <div id="record-done" class="fade-in-up" style="display:none">
+    <div class="px-4 pt-12 text-center">
+      <div class="w-20 h-20 rounded-full bg-primary-light flex items-center justify-center mx-auto mb-4">
+        <svg width="40" height="40" fill="none" stroke="#16A34A" stroke-width="3" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <h2 class="text-xl font-bold mb-1">記録しました！</h2>
+      <p class="text-sm text-text-muted mb-6" id="done-summary">vs 田中さん / 6-4, 6-3</p>
+
+      <!-- インサイトカード -->
+      <div class="bg-gradient-to-br from-primary-light to-green-50 rounded-2xl p-5 mb-8 text-left border border-primary/10" id="insight-card">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm">💡</span>
+          <p class="text-xs font-semibold text-primary">TODAY'S INSIGHT</p>
+        </div>
+        <p class="text-base font-semibold text-text-primary" id="insight-text">
+          😊 が3試合連続！好調持続中 🔥
+        </p>
+        <p class="text-xs text-text-secondary mt-2" id="insight-sub">
+          先月は連続2試合が最高でした。調子の良さを維持しましょう！
+        </p>
+      </div>
+
+      <button class="w-full py-3.5 rounded-2xl bg-primary text-white font-semibold text-sm" onclick="switchTab('home')">ホームに戻る</button>
+      <button class="w-full py-3 rounded-2xl text-primary text-sm font-medium mt-2" onclick="backToTypeSelect(); showAllRecordForms('none');">もう1つ記録する</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================== -->
+<!-- TAB: 対戦相手                   -->
+<!-- ============================== -->
+<div id="tab-opponents" class="tab-content">
+  <div class="bg-white px-5 pt-4 pb-3 border-b border-border-light">
+    <h1 class="text-lg font-bold">仲間</h1>
+    <p class="text-xs text-text-muted mt-0.5">6人の対戦相手・パートナー</p>
+  </div>
+
+  <div class="px-4 pt-4">
+    <div class="relative mb-4">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="名前で検索..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-border-light text-sm bg-white">
+    </div>
+  </div>
+
+  <div class="px-4 space-y-3 pb-24">
+    <!-- 田中さん -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-border-light" onclick="showOpponentDetail('tanaka')">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">田</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold">田中さん</p>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">中上級</span>
+          </div>
+          <p class="text-xs text-text-muted mt-0.5">ストローカー</p>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="flex gap-4 mt-3 pt-3 border-t border-border-light">
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">通算</span><span class="text-sm font-bold text-win">3勝</span><span class="text-sm font-bold text-lose">2敗</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">勝率</span><span class="text-sm font-bold">60%</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">最終</span><span class="text-xs">3/1</span></div>
+      </div>
+    </div>
+
+    <!-- 鈴木さん -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-border-light" onclick="showOpponentDetail('suzuki')">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">鈴</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold">鈴木さん</p>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">上級</span>
+          </div>
+          <p class="text-xs text-text-muted mt-0.5">サーブ&ボレー</p>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="flex gap-4 mt-3 pt-3 border-t border-border-light">
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">通算</span><span class="text-sm font-bold text-win">1勝</span><span class="text-sm font-bold text-lose">4敗</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">勝率</span><span class="text-sm font-bold">20%</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">最終</span><span class="text-xs">2/28</span></div>
+      </div>
+    </div>
+
+    <!-- 佐藤さん -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-border-light">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold">佐</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold">佐藤さん</p>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">中級</span>
+          </div>
+          <p class="text-xs text-text-muted mt-0.5">オールラウンダー</p>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="flex gap-4 mt-3 pt-3 border-t border-border-light">
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">通算</span><span class="text-sm font-bold text-win">4勝</span><span class="text-sm font-bold text-lose">1敗</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">勝率</span><span class="text-sm font-bold">80%</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">最終</span><span class="text-xs">2/25</span></div>
+      </div>
+    </div>
+
+    <!-- 山本さん（パートナー） -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-border-light">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">山</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold">山本さん</p>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-medium">中上級</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">パートナー</span>
+          </div>
+          <p class="text-xs text-text-muted mt-0.5">ダブルスのペア</p>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="flex gap-4 mt-3 pt-3 border-t border-border-light">
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">ペア成績</span><span class="text-sm font-bold text-win">4勝</span><span class="text-sm font-bold text-lose">1敗</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">勝率</span><span class="text-sm font-bold">80%</span></div>
+      </div>
+    </div>
+
+    <!-- 高橋さん -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-border-light">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-bold">高</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold">高橋さん</p>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 font-medium">上級</span>
+          </div>
+          <p class="text-xs text-text-muted mt-0.5">ビッグサーバー</p>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="#94A3B8" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="flex gap-4 mt-3 pt-3 border-t border-border-light">
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">通算</span><span class="text-sm font-bold text-win">2勝</span><span class="text-sm font-bold text-lose">3敗</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">勝率</span><span class="text-sm font-bold">40%</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-xs text-text-muted">最終</span><span class="text-xs">2/18</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== -->
+<!-- 対戦相手詳細ドロワー             -->
+<!-- ============================== -->
+<div id="opponent-drawer" class="fixed inset-0 z-50 hidden">
+  <div class="modal-overlay absolute inset-0" onclick="closeDrawer()"></div>
+  <div class="drawer closed absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto" style="max-width:430px; margin:0 auto;">
+    <div class="flex justify-center pt-3 pb-2">
+      <div class="w-10 h-1 rounded-full bg-gray-300"></div>
+    </div>
+
+    <!-- 田中さん詳細 -->
+    <div id="detail-tanaka" class="px-5 pb-8">
+      <div class="flex items-center gap-4 mb-5">
+        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">田</div>
+        <div>
+          <h2 class="text-lg font-bold">田中さん</h2>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">中上級</span>
+            <span class="text-xs text-text-muted">ストローカー</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-surface rounded-2xl p-4 mb-4">
+        <h3 class="text-xs font-semibold text-text-muted mb-3">HEAD TO HEAD</h3>
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-center flex-1"><p class="text-3xl font-bold text-win">3</p><p class="text-xs text-text-muted">勝ち</p></div>
+          <div class="text-center px-4"><p class="text-lg font-bold text-text-muted">-</p></div>
+          <div class="text-center flex-1"><p class="text-3xl font-bold text-lose">2</p><p class="text-xs text-text-muted">負け</p></div>
+        </div>
+        <div class="h-2 rounded-full bg-gray-100 flex overflow-hidden">
+          <div class="bg-win rounded-l-full" style="width:60%"></div>
+          <div class="bg-lose rounded-r-full" style="width:40%"></div>
+        </div>
+        <p class="text-center text-xs text-text-muted mt-2">勝率 60%</p>
+      </div>
+      <div class="bg-surface rounded-2xl p-4 mb-4">
+        <h3 class="text-xs font-semibold text-text-muted mb-2">プレースタイルメモ</h3>
+        <p class="text-sm text-text-primary">バックハンドのクロスが安定していて強い。フォア側に集めてネットに出ると崩せる。</p>
+      </div>
+      <h3 class="text-xs font-semibold text-text-muted mb-2">対戦履歴</h3>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between py-2 border-b border-border-light">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-win"></div><div><p class="text-sm font-medium">6-4, 6-3</p><p class="text-[10px] text-text-muted">3/1 有明テニスの森</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😊</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-win font-semibold">WIN</span></div>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-border-light">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-lose"></div><div><p class="text-sm font-medium">3-6, 6-4, 4-6</p><p class="text-[10px] text-text-muted">2/15 駒沢テニスコート</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😤</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-lose font-semibold">LOSE</span></div>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-border-light">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-win"></div><div><p class="text-sm font-medium">6-3, 6-2</p><p class="text-[10px] text-text-muted">2/8 世田谷公園</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😊</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-win font-semibold">WIN</span></div>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-border-light">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-win"></div><div><p class="text-sm font-medium">7-5, 6-4</p><p class="text-[10px] text-text-muted">1/25 有明テニスの森</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😐</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-win font-semibold">WIN</span></div>
+        </div>
+        <div class="flex items-center justify-between py-2">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-lose"></div><div><p class="text-sm font-medium">4-6, 2-6</p><p class="text-[10px] text-text-muted">1/11 光が丘テニスコート</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😤</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-lose font-semibold">LOSE</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 鈴木さん詳細 -->
+    <div id="detail-suzuki" class="px-5 pb-8" style="display:none">
+      <div class="flex items-center gap-4 mb-5">
+        <div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xl">鈴</div>
+        <div>
+          <h2 class="text-lg font-bold">鈴木さん</h2>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">上級</span>
+            <span class="text-xs text-text-muted">サーブ&ボレー</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-surface rounded-2xl p-4 mb-4">
+        <h3 class="text-xs font-semibold text-text-muted mb-3">HEAD TO HEAD</h3>
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-center flex-1"><p class="text-3xl font-bold text-win">1</p><p class="text-xs text-text-muted">勝ち</p></div>
+          <div class="text-center px-4"><p class="text-lg font-bold text-text-muted">-</p></div>
+          <div class="text-center flex-1"><p class="text-3xl font-bold text-lose">4</p><p class="text-xs text-text-muted">負け</p></div>
+        </div>
+        <div class="h-2 rounded-full bg-gray-100 flex overflow-hidden">
+          <div class="bg-win rounded-l-full" style="width:20%"></div>
+          <div class="bg-lose rounded-r-full" style="width:80%"></div>
+        </div>
+        <p class="text-center text-xs text-text-muted mt-2">勝率 20%</p>
+      </div>
+      <div class="bg-surface rounded-2xl p-4 mb-4">
+        <h3 class="text-xs font-semibold text-text-muted mb-2">プレースタイルメモ</h3>
+        <p class="text-sm text-text-primary">サーブが速く、すぐネットに詰めてくる。パッシングショットを磨くか、ロブで頭上を抜くのが有効。</p>
+      </div>
+      <h3 class="text-xs font-semibold text-text-muted mb-2">対戦履歴</h3>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between py-2 border-b border-border-light">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-lose"></div><div><p class="text-sm font-medium">4-6, 3-6</p><p class="text-[10px] text-text-muted">2/28 世田谷公園</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😤</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-lose font-semibold">LOSE</span></div>
+        </div>
+        <div class="flex items-center justify-between py-2 border-b border-border-light">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-win"></div><div><p class="text-sm font-medium">7-6, 6-4</p><p class="text-[10px] text-text-muted">2/11 有明テニスの森</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😊</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-win font-semibold">WIN</span></div>
+        </div>
+        <div class="flex items-center justify-between py-2">
+          <div class="flex items-center gap-2"><div class="w-1.5 h-6 rounded-full bg-lose"></div><div><p class="text-sm font-medium">3-6, 4-6</p><p class="text-[10px] text-text-muted">1/28 駒沢テニスコート</p></div></div>
+          <div class="flex items-center gap-2"><span class="text-sm">😐</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-lose font-semibold">LOSE</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== -->
+<!-- ボトムナビゲーション             -->
+<!-- ============================== -->
+<nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light z-40" style="max-width:430px; margin:0 auto;">
+  <div class="flex justify-around items-center h-16 pb-1">
+    <button class="bottom-tab active flex flex-col items-center gap-0.5 px-4 py-1" onclick="switchTab('home')" id="nav-home">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <span class="text-[10px] text-text-muted">ホーム</span>
+    </button>
+    <button class="bottom-tab flex flex-col items-center gap-0.5 px-4 py-1 relative" onclick="switchTab('record')" id="nav-record">
+      <div class="absolute -top-5 w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg">
+        <svg width="26" height="26" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <span class="text-[10px] text-text-muted mt-7">記録する</span>
+    </button>
+    <button class="bottom-tab flex flex-col items-center gap-0.5 px-4 py-1" onclick="switchTab('opponents')" id="nav-opponents">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      <span class="text-[10px] text-text-muted">仲間</span>
+    </button>
+  </div>
+</nav>
+
+</div><!-- end screen-app -->
+
+
+<script>
+// ============================
+// Onboarding
+// ============================
+function showOnboardStep(step) {
+  document.querySelectorAll('[id^="onboard-step-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('onboard-step-' + step).style.display = 'block';
+}
+
+function selectExpChip(el) {
+  el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectLevelChip(el) {
+  el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function finishOnboarding(target) {
+  document.getElementById('screen-onboarding').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  if (target === 'record') {
+    switchTab('record');
+  }
+}
+
+// ============================
+// Tab Navigation
+// ============================
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.querySelectorAll('.bottom-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'record') {
+    backToTypeSelect();
+    showAllRecordForms('none');
+  }
+  window.scrollTo(0, 0);
+}
+
+// ============================
+// Record Type Selection
+// ============================
+function showRecordForm(type) {
+  document.getElementById('record-type-select').style.display = 'none';
+  document.getElementById('record-done').style.display = 'none';
+  document.getElementById('record-practice').style.display = type === 'practice' ? 'block' : 'none';
+  document.getElementById('record-singles').style.display = type === 'singles' ? 'block' : 'none';
+  document.getElementById('record-doubles').style.display = type === 'doubles' ? 'block' : 'none';
+  window.scrollTo(0, 0);
+}
+
+function backToTypeSelect() {
+  document.getElementById('record-type-select').style.display = 'block';
+  document.getElementById('record-practice').style.display = 'none';
+  document.getElementById('record-singles').style.display = 'none';
+  document.getElementById('record-doubles').style.display = 'none';
+  document.getElementById('record-done').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+function showAllRecordForms(display) {
+  ['record-practice', 'record-singles', 'record-doubles', 'record-done'].forEach(id => {
+    document.getElementById(id).style.display = display;
+  });
+}
+
+// ============================
+// Chip toggle (generic)
+// ============================
+function toggleChip(el) {
+  el.classList.toggle('selected');
+}
+
+// ============================
+// Self Rating
+// ============================
+const ratingLabels = { bad: '調子イマイチ...', neutral: 'まあまあ', good: 'いい感じ！' };
+function selectRating(el, rating) {
+  const container = el.parentElement;
+  container.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const label = container.nextElementSibling;
+  if (label) label.textContent = ratingLabels[rating];
+}
+
+// ============================
+// Save & Insight
+// ============================
+const insights = [
+  { text: '😊 が3試合連続！好調持続中 🔥', sub: '先月は連続2試合が最高でした。調子の良さを維持しましょう！' },
+  { text: '今月6試合目。先月の4試合をもう超えました 📈', sub: 'テニスの頻度が上がっています。この調子でデータを溜めましょう！' },
+  { text: '田中さんに通算 3勝2敗！勝ち越しています 🏆', sub: '前回の敗戦から修正できましたね。次も頑張りましょう！' },
+  { text: '山本さんとのダブルス 4勝1敗！最強コンビ 🤝', sub: 'ペアの勝率80%は素晴らしい。得意なフォーメーションが確立されてきました' },
+  { text: 'サーブ練習を増やした月は試合の調子が良い傾向 🎯', sub: '今月の練習でサーブを重点的にやった成果が出ています' },
+];
+
+const summaries = {
+  practice: '🏋️ 練習 / サーブ・ストローク',
+  singles: 'vs 田中さん / 6-4, 6-3',
+  doubles: 'ダブルス w/ 山本さん / 6-3, 6-4',
+};
+
+function saveAndShowInsight(type) {
+  const insight = insights[Math.floor(Math.random() * insights.length)];
+  document.getElementById('done-summary').textContent = summaries[type] || '';
+  document.getElementById('insight-text').textContent = insight.text;
+  document.getElementById('insight-sub').textContent = insight.sub;
+
+  document.getElementById('record-practice').style.display = 'none';
+  document.getElementById('record-singles').style.display = 'none';
+  document.getElementById('record-doubles').style.display = 'none';
+  document.getElementById('record-type-select').style.display = 'none';
+  document.getElementById('record-done').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+// ============================
+// Opponent Detail Drawer
+// ============================
+function showOpponentDetail(id) {
+  const drawer = document.getElementById('opponent-drawer');
+  const panel = drawer.querySelector('.drawer');
+  drawer.classList.remove('hidden');
+  document.querySelectorAll('[id^="detail-"]').forEach(d => d.style.display = 'none');
+  const detail = document.getElementById('detail-' + id);
+  if (detail) detail.style.display = 'block';
+  requestAnimationFrame(() => panel.classList.remove('closed'));
+}
+
+function closeDrawer() {
+  const drawer = document.getElementById('opponent-drawer');
+  const panel = drawer.querySelector('.drawer');
+  panel.classList.add('closed');
+  setTimeout(() => drawer.classList.add('hidden'), 300);
+}
+
+// ============================
+// Skip onboarding shortcut (for demo: double-tap status bar)
+// ============================
+let tapCount = 0;
+document.addEventListener('dblclick', (e) => {
+  if (e.target.closest('#screen-onboarding')) {
+    finishOnboarding('home');
+  }
+});
+</script>
+
+</body>
+</html>
