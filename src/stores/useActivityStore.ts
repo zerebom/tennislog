@@ -35,6 +35,7 @@ interface ActivityState {
   addMatch: (input: AddMatchInput) => Match
   addPractice: (input: AddPracticeInput) => Practice
   addBatchMatches: (matches: Omit<AddMatchInput, 'selfRating'>[], selfRating: SelfRating) => Match[]
+  updateActivity: (id: string, data: Partial<Omit<Activity, 'id' | 'createdAt'>>) => void
   deleteActivity: (id: string) => void
   getActivitiesByMonth: (year: number, month: number) => Activity[]
   getMatchesByPerson: (personId: string) => Match[]
@@ -90,6 +91,20 @@ export const useActivityStore = create<ActivityState>()(
         }))
         set((state) => ({ activities: [...state.activities, ...newMatches] }))
         return newMatches
+      },
+
+      updateActivity: (id, data) => {
+        set((state) => ({
+          activities: state.activities.map((a) => {
+            if (a.id !== id) return a
+            const updated = { ...a, ...data, updatedAt: new Date().toISOString() }
+            // Recalculate result if sets changed on a match
+            if ('sets' in updated && updated.type !== 'practice') {
+              (updated as Match).result = calcResult((updated as Match).sets)
+            }
+            return updated
+          }),
+        }))
       },
 
       deleteActivity: (id) => {

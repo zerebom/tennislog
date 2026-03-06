@@ -9,6 +9,7 @@ import { RecordSinglesPage } from '@/pages/RecordSinglesPage'
 import { RecordDoublesPage } from '@/pages/RecordDoublesPage'
 import { RecordPracticePage } from '@/pages/RecordPracticePage'
 import { RecordBatchPage } from '@/pages/RecordBatchPage'
+import { ActivityDetailPage } from '@/pages/ActivityDetailPage'
 import { useProfileStore } from '@/stores/useProfileStore'
 
 function AppRoutes() {
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="/persons/:id" element={<PersonDetailPage />} />
         <Route path="/stats" element={<StatsPage />} />
       </Route>
+      <Route path="/activity/:id" element={<ActivityDetailPage />} />
       <Route path="/record/singles" element={<RecordSinglesPage />} />
       <Route path="/record/doubles" element={<RecordDoublesPage />} />
       <Route path="/record/practice" element={<RecordPracticePage />} />
