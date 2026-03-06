@@ -11,6 +11,10 @@ import { RecordPracticePage } from '@/pages/RecordPracticePage'
 import { RecordBatchPage } from '@/pages/RecordBatchPage'
 import { ActivityDetailPage } from '@/pages/ActivityDetailPage'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { LoginPage } from '@/pages/LoginPage'
+import { useSupabaseSync } from '@/hooks/useSupabaseSync'
+import { Loader2 } from 'lucide-react'
 
 function AppRoutes() {
   const { isOnboarded } = useProfileStore()
@@ -34,6 +38,7 @@ function AppRoutes() {
         <Route path="/persons" element={<PersonsPage />} />
         <Route path="/persons/:id" element={<PersonDetailPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/activity/:id" element={<ActivityDetailPage />} />
       </Route>
       <Route path="/activity/:id" element={<ActivityDetailPage />} />
       <Route path="/record/singles" element={<RecordSinglesPage />} />
@@ -45,10 +50,44 @@ function AppRoutes() {
   )
 }
 
-export default function App() {
+function AuthGate() {
+  const { user, loading } = useAuth()
+  const { syncing, synced } = useSupabaseSync()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <LoginPage />
+  }
+
+  if (syncing && !synced) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2 text-sm text-muted-foreground">データを読み込み中...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter>
       <AppRoutes />
     </BrowserRouter>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
   )
 }

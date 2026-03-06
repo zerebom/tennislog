@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useActivityStore } from '@/stores/useActivityStore'
 import { usePersonStore } from '@/stores/usePersonStore'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { RecordTypeSheet } from '@/components/RecordTypeSheet'
 import type { Activity, Match } from '@/types'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -130,7 +131,14 @@ function Calendar({ activities, currentMonth }: { activities: Activity[]; curren
   )
 }
 
-function ActivityCard({ activity, personName, onClick }: { activity: Activity; personName?: string; onClick?: () => void }) {
+interface ActivityCardProps {
+  activity: Activity
+  partnerName?: string
+  opponentName?: string
+  onClick?: () => void
+}
+
+function ActivityCard({ activity, partnerName, opponentName, onClick }: ActivityCardProps) {
   const isMatch = activity.type !== 'practice'
   const match = isMatch ? (activity as Match) : null
 
@@ -145,12 +153,23 @@ function ActivityCard({ activity, personName, onClick }: { activity: Activity; p
     'match-play': '試合形式',
   }
 
+  // Build person label
+  let personLabel: string | null = null
+  if (match) {
+    if (match.type === 'doubles') {
+      const parts: string[] = []
+      if (partnerName) parts.push(`w/ ${partnerName}`)
+      if (opponentName) parts.push(`vs ${opponentName}`)
+      personLabel = parts.length > 0 ? parts.join(' ') : null
+    } else {
+      personLabel = opponentName ? `vs ${opponentName}` : null
+    }
+  }
+
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
-        onClick ? 'cursor-pointer active:bg-accent' : ''
-      } ${
+      className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer active:scale-[0.98] transition-transform ${
         activity.type === 'practice' ? 'border-practice/20 bg-practice/5' : 'border-border bg-card'
       }`}
     >
@@ -159,12 +178,12 @@ function ActivityCard({ activity, personName, onClick }: { activity: Activity; p
         <div className="flex items-center gap-2">
           {match && (
             <>
-              {personName && (
-                <span className="text-sm font-medium">
-                  {match.type === 'doubles' ? `w/ ${personName}` : `vs ${personName}`}
+              {personLabel && (
+                <span className="text-sm font-medium truncate">
+                  {personLabel}
                 </span>
               )}
-              <span className={`text-sm font-bold ${match.result === 'win' ? 'text-win' : 'text-lose'}`}>
+              <span className={`text-sm font-bold shrink-0 ${match.result === 'win' ? 'text-win' : 'text-lose'}`}>
                 {score}
               </span>
             </>
@@ -188,6 +207,7 @@ export function HomePage() {
   const { profile } = useProfileStore()
   const navigate = useNavigate()
 
+  const [showRecordSheet, setShowRecordSheet] = useState(false)
   const [monthOffset, setMonthOffset] = useState(0)
   const currentMonth = useMemo(() => {
     const d = new Date()
@@ -219,8 +239,9 @@ export function HomePage() {
             <br />
             上達を見える化しましょう
           </p>
-          <Button onClick={() => navigate('/record/singles')}>最初の記録をする</Button>
+          <Button onClick={() => setShowRecordSheet(true)}>最初の記録をする</Button>
         </div>
+        <RecordTypeSheet open={showRecordSheet} onOpenChange={setShowRecordSheet} />
       </div>
     )
   }
@@ -279,13 +300,14 @@ export function HomePage() {
           <div className="space-y-2">
             {sortedActivities.slice(0, 20).map((activity) => {
               const match = activity.type !== 'practice' ? (activity as Match) : null
-              const personId = match?.opponentId ?? match?.partnerId
-              const personName = personId ? getPerson(personId)?.name : undefined
+              const opponentName = match?.opponentId ? getPerson(match.opponentId)?.name : undefined
+              const partnerName = match?.partnerId ? getPerson(match.partnerId)?.name : undefined
               return (
                 <ActivityCard
                   key={activity.id}
                   activity={activity}
-                  personName={personName}
+                  opponentName={opponentName}
+                  partnerName={partnerName}
                   onClick={() => navigate(`/activity/${activity.id}`)}
                 />
               )
