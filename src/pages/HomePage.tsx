@@ -130,7 +130,7 @@ function Calendar({ activities, currentMonth }: { activities: Activity[]; curren
   )
 }
 
-function ActivityCard({ activity, personName }: { activity: Activity; personName?: string }) {
+function ActivityCard({ activity, personName, onClick }: { activity: Activity; personName?: string; onClick?: () => void }) {
   const isMatch = activity.type !== 'practice'
   const match = isMatch ? (activity as Match) : null
 
@@ -146,9 +146,14 @@ function ActivityCard({ activity, personName }: { activity: Activity; personName
   }
 
   return (
-    <div className={`flex items-center gap-3 rounded-xl border p-3 ${
-      activity.type === 'practice' ? 'border-practice/20 bg-practice/5' : 'border-border bg-card'
-    }`}>
+    <div
+      onClick={onClick}
+      className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+        onClick ? 'cursor-pointer active:bg-accent' : ''
+      } ${
+        activity.type === 'practice' ? 'border-practice/20 bg-practice/5' : 'border-border bg-card'
+      }`}
+    >
       <span className="text-lg">{typeIcon}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -277,7 +282,12 @@ export function HomePage() {
               const personId = match?.opponentId ?? match?.partnerId
               const personName = personId ? getPerson(personId)?.name : undefined
               return (
-                <ActivityCard key={activity.id} activity={activity} personName={personName} />
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  personName={personName}
+                  onClick={() => navigate(`/activity/${activity.id}`)}
+                />
               )
             })}
           </div>

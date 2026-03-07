@@ -1,9 +1,19 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePersonStore } from '@/stores/usePersonStore'
 import { useActivityStore } from '@/stores/useActivityStore'
 import type { Match, RelativeLevel } from '@/types'
 import { format } from 'date-fns'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 const ratingEmoji = { bad: '😤', neutral: '😐', good: '😊' }
 const levelLabels: Record<RelativeLevel, string> = {
@@ -15,8 +25,16 @@ const levelLabels: Record<RelativeLevel, string> = {
 export function PersonDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getPerson, setRelativeLevel } = usePersonStore()
+  const { getPerson, setRelativeLevel, deletePerson } = usePersonStore()
   const { activities } = useActivityStore()
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  const handleDelete = () => {
+    if (!id) return
+    deletePerson(id)
+    navigate('/persons', { replace: true })
+  }
 
   const person = id ? getPerson(id) : undefined
   if (!person) {
@@ -55,6 +73,12 @@ export function PersonDetailPage() {
         {role === 'partner' && (
           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-600">パートナー</span>
         )}
+        <button
+          onClick={() => setShowDeleteDialog(true)}
+          className="ml-auto text-muted-foreground transition-colors hover:text-destructive"
+        >
+          <Trash2 className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Overall stats */}
@@ -127,6 +151,25 @@ export function PersonDetailPage() {
           <p className="py-4 text-center text-sm text-muted-foreground">まだ対戦記録がありません</p>
         )}
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{person.name}を削除しますか？</DialogTitle>
+            <DialogDescription>
+              この仲間を削除します。対戦履歴は残りますが、名前の表示は消えます。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              キャンセル
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
