@@ -40,7 +40,6 @@ function AppRoutes() {
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/activity/:id" element={<ActivityDetailPage />} />
       </Route>
-      <Route path="/activity/:id" element={<ActivityDetailPage />} />
       <Route path="/record/singles" element={<RecordSinglesPage />} />
       <Route path="/record/doubles" element={<RecordDoublesPage />} />
       <Route path="/record/practice" element={<RecordPracticePage />} />
