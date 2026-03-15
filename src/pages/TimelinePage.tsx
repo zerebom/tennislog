@@ -8,7 +8,6 @@ import {
   getDay,
   addMonths,
   subMonths,
-  isSameDay,
   isToday,
 } from 'date-fns'
 import { ja } from 'date-fns/locale'

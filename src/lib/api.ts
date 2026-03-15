@@ -146,6 +146,31 @@ export async function generateCoaching(
   return toCoachingResponse(data.coaching as CoachingOutputApi, session.id)
 }
 
+// インポートパース用の型
+export interface ParsedSessionApi {
+  date: string | null
+  session_type: string
+  memo: string
+  score: string | null
+  result: string | null
+  opponent: string | null
+}
+
+export async function parseImportText(rawText: string): Promise<ParsedSessionApi[]> {
+  const res = await fetch(`${API_BASE}/api/import/parse`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${API_TOKEN}`,
+    },
+    body: JSON.stringify({ raw_text: rawText }),
+  })
+
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  const data = await res.json()
+  return data.sessions as ParsedSessionApi[]
+}
+
 export async function generateDiagnosis(
   diagnosis: NonNullable<UserProfile['diagnosis']>
 ): Promise<DiagnosisOutputApi> {

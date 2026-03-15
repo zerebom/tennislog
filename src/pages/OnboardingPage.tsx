@@ -631,7 +631,7 @@ export function OnboardingPage() {
           <button
             onClick={() => {
               completeOnboarding()
-              navigate('/')
+              navigate('/import?from=onboarding')
             }}
             className="w-full transition-transform active:scale-[0.98]"
             style={{
@@ -640,6 +640,24 @@ export function OnboardingPage() {
               color: '#1B6B4A',
               fontSize: '15px',
               fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            過去のメモをまとめてインポートする
+          </button>
+          <button
+            onClick={() => {
+              completeOnboarding()
+              navigate('/')
+            }}
+            className="w-full transition-transform active:scale-[0.98]"
+            style={{
+              height: '40px',
+              backgroundColor: 'transparent',
+              color: '#4A5550',
+              fontSize: '15px',
+              fontWeight: 600,
               border: 'none',
               cursor: 'pointer',
             }}

@@ -8,6 +8,7 @@ import { RecordPracticePage } from '@/pages/RecordPracticePage'
 import { SessionDetailPage } from '@/pages/SessionDetailPage'
 import { TimelinePage } from '@/pages/TimelinePage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { ImportPage } from '@/pages/ImportPage'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { LoginPage } from '@/pages/LoginPage'
@@ -21,6 +22,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/import" element={<ImportPage />} />
         <Route path="/record/singles" element={<RecordSinglesPage />} />
         <Route path="/record/doubles" element={<RecordDoublesPage />} />
         <Route path="/record/practice" element={<RecordPracticePage />} />
@@ -37,6 +39,7 @@ function AppRoutes() {
         <Route path="/timeline" element={<TimelinePage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
+      <Route path="/import" element={<ImportPage />} />
       <Route path="/record/singles" element={<RecordSinglesPage />} />
       <Route path="/record/doubles" element={<RecordDoublesPage />} />
       <Route path="/record/practice" element={<RecordPracticePage />} />

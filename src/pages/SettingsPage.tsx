@@ -225,6 +225,37 @@ export function SettingsPage() {
         >
           <p
             className="mb-1"
+            style={{ fontSize: '16px', fontWeight: 500, color: '#1B6B4A' }}
+          >
+            メモをインポート
+          </p>
+          <p
+            className="mb-4"
+            style={{ fontSize: '14px', fontWeight: 400, color: '#4A5550', lineHeight: 1.7 }}
+          >
+            過去のテニスメモをまとめて取り込みます
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/import')}
+            className="w-full mb-5"
+            style={{
+              height: '48px',
+              borderRadius: '16px',
+              borderColor: '#1B6B4A',
+              color: '#1B6B4A',
+              fontSize: '15px',
+              fontWeight: 700,
+              backgroundColor: 'transparent',
+            }}
+          >
+            インポートする
+          </Button>
+
+          <div style={{ height: '1px', backgroundColor: '#DDD9D2', marginBottom: '20px' }} />
+
+          <p
+            className="mb-1"
             style={{ fontSize: '16px', fontWeight: 500, color: '#D4483B' }}
           >
             すべてのデータを削除
