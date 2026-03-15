@@ -16,6 +16,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { ArrowLeft } from 'lucide-react'
+import { format } from 'date-fns'
+import { ja } from 'date-fns/locale'
 import type { Set } from '@/types'
 
 const typeLabel: Record<string, string> = {
@@ -107,7 +109,9 @@ export function SessionDetailPage() {
           <span className="rounded-full bg-[#1B7A4A]/10 px-3 py-0.5 text-xs font-medium text-[#1B7A4A]">
             {typeLabel[session.type]}
           </span>
-          <span className="text-sm text-muted-foreground">{session.date}</span>
+          <span className="text-sm text-muted-foreground">
+            {format(new Date(session.date), 'M月d日(E)', { locale: ja })}
+          </span>
         </div>
         {!isEditing && (
           <button
