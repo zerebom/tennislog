@@ -1,9 +1,9 @@
-import type { SetScore } from '@/types'
+import type { Set } from '@/types'
 import { Plus, X } from 'lucide-react'
 
 interface Props {
-  sets: SetScore[]
-  onChange: (sets: SetScore[]) => void
+  sets: Set[]
+  onChange: (sets: Set[]) => void
 }
 
 const scores = [0, 1, 2, 3, 4, 5, 6, 7]

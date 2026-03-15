@@ -2,117 +2,124 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { SelfRatingPicker } from '@/components/SelfRatingPicker'
-import { InsightCard } from '@/components/InsightCard'
-import { useActivityStore } from '@/stores/useActivityStore'
-import { usePersonStore } from '@/stores/usePersonStore'
-import { generateInsight } from '@/stores/useInsightStore'
-import type { SelfRating, PracticeTag } from '@/types'
-import { ArrowLeft } from 'lucide-react'
+import { useSessionStore } from '@/stores/useSessionStore'
+import { useCoachingStore } from '@/stores/useCoachingStore'
+import { useProfileStore } from '@/stores/useProfileStore'
+import { generateCoaching } from '@/lib/api'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
-
-const practiceTagOptions: { value: PracticeTag; label: string }[] = [
-  { value: 'serve', label: 'サーブ' },
-  { value: 'stroke', label: 'ストローク' },
-  { value: 'volley', label: 'ボレー' },
-  { value: 'footwork', label: 'フットワーク' },
-  { value: 'match-play', label: '試合形式' },
-]
 
 export function RecordPracticePage() {
   const navigate = useNavigate()
-  const { addPractice, activities } = useActivityStore()
-  const { getPerson } = usePersonStore()
-  const [tags, setTags] = useState<PracticeTag[]>([])
-  const [selfRating, setSelfRating] = useState<SelfRating | null>(null)
+  const { addSession, sessions } = useSessionStore()
+  const { addCoachingResponse, getBySessionId } = useCoachingStore()
+  const { profile } = useProfileStore()
   const [memo, setMemo] = useState('')
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [completed, setCompleted] = useState(false)
-  const [insight, setInsight] = useState<ReturnType<typeof generateInsight> | null>(null)
 
-  const toggleTag = (tag: PracticeTag) => {
-    setTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const canSubmit = status === 'idle'
+
+  const runCoaching = async (sessionId: string) => {
+    const newSession = sessions.find((s) => s.id === sessionId)
+      ?? { id: sessionId, type: 'practice' as const, date, memo: memo.trim(), createdAt: new Date().toISOString() }
+
+    const recentPast = [...sessions]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 5)
+      .map((s) => ({ session: s, coaching: getBySessionId(s.id) ?? null }))
+
+    const coaching = await generateCoaching(newSession, recentPast, profile ?? undefined)
+    addCoachingResponse(coaching)
+    return coaching
+  }
+
+  const handleSubmit = async () => {
+    setStatus('loading')
+    setErrorMsg('')
+    try {
+      const session = addSession({ type: 'practice', date, memo: memo.trim() })
+      await runCoaching(session.id)
+      navigate(`/sessions/${session.id}`)
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'コーチングの取得に失敗しました')
+      setStatus('error')
+    }
+  }
+
+  const handleSkip = () => {
+    const latest = [...sessions].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+    if (latest) {
+      navigate(`/sessions/${latest.id}`)
+    } else {
+      navigate('/')
+    }
+  }
+
+  const handleRetry = async () => {
+    setStatus('loading')
+    setErrorMsg('')
+    try {
+      const latest = [...sessions].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+      if (latest) {
+        await runCoaching(latest.id)
+        navigate(`/sessions/${latest.id}`)
+      }
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'コーチングの取得に失敗しました')
+      setStatus('error')
+    }
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center px-6">
+        <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
+        <p className="text-base font-medium">AIコーチが分析中...</p>
+      </div>
     )
   }
 
-  const canSubmit = selfRating !== null && tags.length > 0
-
-  const handleSubmit = () => {
-    if (!selfRating || tags.length === 0) return
-    const practice = addPractice({
-      date,
-      tags,
-      selfRating,
-      memo: memo.trim() || undefined,
-    })
-    const allActivities = [...activities, practice]
-    setInsight(generateInsight(allActivities, practice, (id) => getPerson(id)?.name))
-    setCompleted(true)
-  }
-
-  if (completed && insight) {
+  if (status === 'error') {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center px-6">
-        <div className="w-full max-w-sm text-center">
-          <div className="mb-4 text-5xl">✅</div>
-          <h2 className="mb-6 text-xl font-bold">記録しました!</h2>
-          <InsightCard insight={insight} />
-          <Button onClick={() => navigate('/')} size="lg" className="mt-6 w-full">
-            ホームへ
-          </Button>
+        <div className="w-full max-w-sm text-center space-y-4">
+          <p className="text-sm text-muted-foreground">{errorMsg || 'コーチングの取得に失敗しました'}</p>
+          <Button onClick={handleRetry} className="w-full">もう一度試す</Button>
+          <Button variant="outline" onClick={handleSkip} className="w-full">スキップ</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-4">
-      <div className="mb-4 flex items-center gap-2">
+    <div className="mx-auto max-w-md px-5 pt-[48px]">
+      <div className="mb-6 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="text-muted-foreground">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-lg font-bold">🏋️ 練習を記録</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.3] tracking-[-0.02em]">練習を記録</h1>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div>
-          <label className="mb-1 block text-sm font-medium">日付</label>
+          <label className="mb-2 block text-[14px] font-medium">日付</label>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="h-10 w-full rounded-lg border border-border bg-card px-3"
+            className="h-12 w-full rounded-[12px] border-[1.5px] border-border bg-background px-5 text-base"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">何に取り組んだ？（複数可）</label>
-          <div className="flex flex-wrap gap-2">
-            {practiceTagOptions.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => toggleTag(value)}
-                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                  tags.includes(value)
-                    ? 'border-practice bg-practice/10 text-practice'
-                    : 'border-border bg-card'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <SelfRatingPicker value={selfRating} onChange={setSelfRating} />
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">メモ（任意）</label>
+          <label className="mb-2 block text-[14px] font-medium">メモ（任意）</label>
           <Textarea
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-            placeholder="例: スライスサーブのトスを前に"
+            placeholder="今日のテニスで気づいたことを書いてください"
             rows={2}
           />
         </div>

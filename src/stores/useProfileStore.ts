@@ -7,6 +7,7 @@ interface ProfileState {
   setProfile: (profile: Partial<UserProfile>) => void
   completeOnboarding: () => void
   isOnboarded: () => boolean
+  resetProfile: () => void
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -38,6 +39,8 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       isOnboarded: () => get().profile?.onboardingCompleted ?? false,
+
+      resetProfile: () => set({ profile: null }),
     }),
     { name: 'tennislog-profile' }
   )

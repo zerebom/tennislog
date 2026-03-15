@@ -1,15 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { HomePage } from '@/pages/HomePage'
-import { PersonsPage } from '@/pages/PersonsPage'
-import { PersonDetailPage } from '@/pages/PersonDetailPage'
-import { StatsPage } from '@/pages/StatsPage'
 import { OnboardingPage } from '@/pages/OnboardingPage'
 import { RecordSinglesPage } from '@/pages/RecordSinglesPage'
 import { RecordDoublesPage } from '@/pages/RecordDoublesPage'
 import { RecordPracticePage } from '@/pages/RecordPracticePage'
-import { RecordBatchPage } from '@/pages/RecordBatchPage'
-import { ActivityDetailPage } from '@/pages/ActivityDetailPage'
+import { SessionDetailPage } from '@/pages/SessionDetailPage'
+import { TimelinePage } from '@/pages/TimelinePage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { LoginPage } from '@/pages/LoginPage'
@@ -35,15 +33,13 @@ function AppRoutes() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/persons" element={<PersonsPage />} />
-        <Route path="/persons/:id" element={<PersonDetailPage />} />
-        <Route path="/stats" element={<StatsPage />} />
-        <Route path="/activity/:id" element={<ActivityDetailPage />} />
+        <Route path="/sessions/:id" element={<SessionDetailPage />} />
+        <Route path="/timeline" element={<TimelinePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="/record/singles" element={<RecordSinglesPage />} />
       <Route path="/record/doubles" element={<RecordDoublesPage />} />
       <Route path="/record/practice" element={<RecordPracticePage />} />
-      <Route path="/record/batch" element={<RecordBatchPage />} />
       <Route path="/onboarding" element={<Navigate to="/" replace />} />
     </Routes>
   )

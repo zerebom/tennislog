@@ -6,17 +6,17 @@ interface Props {
 
 export function InsightCard({ insight }: Props) {
   const bgColors = {
-    self: 'bg-primary/5 border-primary/20',
+    self: 'bg-[var(--primary-light)] border-primary/20',
     tribe: 'bg-blue-50 border-blue-200',
     hunt: 'bg-amber-50 border-amber-200',
   }
 
   return (
-    <div className={`rounded-xl border p-4 ${bgColors[insight.type]}`}>
-      <div className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+    <div className={`rounded-[16px] border-[1.5px] p-5 ${bgColors[insight.type]}`}>
+      <div className="mb-1 text-[12px] font-medium text-muted-foreground uppercase tracking-[0.02em]">
         Today's Insight
       </div>
-      <p className="text-sm font-medium">{insight.text}</p>
+      <p className="text-[15px] font-medium leading-[1.7]">{insight.text}</p>
     </div>
   )
 }
