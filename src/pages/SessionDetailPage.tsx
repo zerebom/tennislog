@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSessionStore } from '@/stores/useSessionStore'
 import { usePersonStore } from '@/stores/usePersonStore'
+import { useCoachingStore } from '@/stores/useCoachingStore'
 import { ScoreInput } from '@/components/ScoreInput'
 import { PersonPicker } from '@/components/PersonPicker'
+import { CoachingCard } from '@/components/CoachingCard'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,6 +15,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { ArrowLeft } from 'lucide-react'
 import type { Set } from '@/types'
 
 const typeLabel: Record<string, string> = {
@@ -26,6 +29,7 @@ export function SessionDetailPage() {
   const navigate = useNavigate()
   const { sessions, updateSession, deleteSession } = useSessionStore()
   const { getPerson } = usePersonStore()
+  const { getBySessionId } = useCoachingStore()
 
   const session = sessions.find((s) => s.id === id)
 
@@ -50,6 +54,7 @@ export function SessionDetailPage() {
 
   const opponent = session.opponentId ? getPerson(session.opponentId) : undefined
   const partner = session.partnerId ? getPerson(session.partnerId) : undefined
+  const coaching = id ? (getBySessionId(id) ?? null) : null
 
   const handleSave = () => {
     const data: Parameters<typeof updateSession>[1] = {
@@ -86,14 +91,24 @@ export function SessionDetailPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-6 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
         <button
-          onClick={() => navigate(-1)}
-          className="text-sm text-muted-foreground"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1 text-sm text-muted-foreground"
         >
-          ← 戻る
+          <ArrowLeft className="h-4 w-4" />
+          ホームへ
         </button>
-        <h1 className="text-lg font-bold">{typeLabel[session.type]}</h1>
+      </div>
+
+      {/* タイトル行: 種別タグ + 日付 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-[#1B7A4A]/10 px-3 py-0.5 text-xs font-medium text-[#1B7A4A]">
+            {typeLabel[session.type]}
+          </span>
+          <span className="text-sm text-muted-foreground">{session.date}</span>
+        </div>
         {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
@@ -104,6 +119,38 @@ export function SessionDetailPage() {
         )}
         {isEditing && <div className="w-8" />}
       </div>
+
+      {/* スコア + WIN/LOSE バッジ（試合の場合） */}
+      {session.type !== 'practice' && session.sets && session.sets.length > 0 && !isEditing && (
+        <div className="flex items-center gap-3">
+          <span
+            className={`rounded-full px-3 py-0.5 text-xs font-bold ${
+              session.result === 'win'
+                ? 'bg-[#1B7A4A] text-white'
+                : 'bg-[#D4483B] text-white'
+            }`}
+          >
+            {session.result === 'win' ? 'WIN' : 'LOSE'}
+          </span>
+          <div className="flex gap-2">
+            {session.sets.map((s, i) => (
+              <span key={i} className="text-sm font-medium">
+                {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}: {s.myScore}-{s.opponentScore}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* vs. 相手名 */}
+      {opponent && !isEditing && (
+        <p className="text-sm text-muted-foreground">vs. {opponent.name}さん</p>
+      )}
+
+      {/* パートナー名 */}
+      {partner && !isEditing && (
+        <p className="text-sm text-muted-foreground">パートナー: {partner.name}さん</p>
+      )}
 
       {isEditing ? (
         /* Edit Mode */
@@ -150,7 +197,7 @@ export function SessionDetailPage() {
               onChange={(e) => setEditMemo(e.target.value)}
               rows={3}
               className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm resize-none"
-              placeholder="気づいたこと、課題など"
+              placeholder="今日のテニスで気づいたことを書いてください"
             />
           </div>
 
@@ -162,71 +209,36 @@ export function SessionDetailPage() {
               保存
             </Button>
           </div>
+
+          {/* Delete */}
+          <Button variant="destructive" className="w-full" onClick={() => setShowDeleteDialog(true)}>
+            削除
+          </Button>
         </div>
       ) : (
         /* View Mode */
         <div className="space-y-4">
-          {/* Date card */}
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">日付</p>
-            <p className="mt-1 text-base font-medium">{session.date}</p>
+          {/* メモセクション */}
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">メモ</h2>
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="flex">
+                <div className="w-1 shrink-0 bg-[#1B7A4A]" />
+                <div className="px-4 py-3">
+                  {session.memo ? (
+                    <p className="text-sm whitespace-pre-wrap">{session.memo}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">メモなし</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Match details */}
-          {session.type !== 'practice' && session.sets && session.sets.length > 0 && (
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">結果</p>
-                <span
-                  className={`text-sm font-bold ${
-                    session.result === 'win' ? 'text-green-600' : 'text-red-500'
-                  }`}
-                >
-                  {session.result === 'win' ? '勝ち' : '負け'}
-                </span>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">スコア</p>
-                <div className="flex gap-3">
-                  {session.sets.map((s, i) => (
-                    <span key={i} className="text-sm font-medium">
-                      {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}: {s.myScore}-{s.opponentScore}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {opponent && (
-                <div>
-                  <p className="text-xs text-muted-foreground">相手</p>
-                  <p className="text-sm">{opponent.name}</p>
-                </div>
-              )}
-              {partner && (
-                <div>
-                  <p className="text-xs text-muted-foreground">パートナー</p>
-                  <p className="text-sm">{partner.name}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {session.type === 'practice' && (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-sm text-muted-foreground">練習・レッスン</p>
-            </div>
-          )}
-
-          {/* Memo */}
-          {session.memo && (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground mb-1">メモ</p>
-              <p className="text-sm whitespace-pre-wrap">{session.memo}</p>
-            </div>
-          )}
-
-          {/* Coaching placeholder */}
-          <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-            AIコーチングは今後実装予定です
+          {/* AIコーチングセクション */}
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">AIコーチング</h2>
+            <CoachingCard coaching={coaching} />
           </div>
 
           {/* Delete */}

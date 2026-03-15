@@ -30,9 +30,9 @@ export function RecordDoublesPage() {
       <div className="flex min-h-dvh flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm text-center">
           <div className="mb-4 text-5xl">✅</div>
-          <h2 className="mb-6 text-xl font-bold">記録しました!</h2>
+          <h2 className="mb-6 text-xl font-bold">記録しました！</h2>
           <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-            AIコーチングは今後実装予定です
+            次回からここにAIコーチングが表示されます
           </div>
           <Button onClick={() => navigate('/')} size="lg" className="mt-6 w-full">
             ホームへ
@@ -70,7 +70,7 @@ export function RecordDoublesPage() {
           <Textarea
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-            placeholder="例: ボレーが決まった"
+            placeholder="今日のテニスで気づいたことを書いてください"
             rows={2}
           />
         </div>
