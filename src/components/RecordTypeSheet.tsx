@@ -15,7 +15,6 @@ const recordTypes = [
   { type: 'practice', emoji: '🏋️', label: '練習・レッスン', path: '/record/practice' },
   { type: 'singles', emoji: '🎾', label: 'シングルス', path: '/record/singles' },
   { type: 'doubles', emoji: '🎾🎾', label: 'ダブルス', path: '/record/doubles' },
-  { type: 'batch', emoji: '📋', label: 'まとめ記録', path: '/record/batch' },
 ] as const
 
 export function RecordTypeSheet({ open, onOpenChange }: Props) {

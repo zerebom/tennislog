@@ -1,12 +1,11 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Users, BarChart3, Plus } from 'lucide-react'
+import { Home, Clock, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { RecordTypeSheet } from '@/components/RecordTypeSheet'
 
 const tabs = [
   { path: '/', icon: Home, label: 'ホーム' },
-  { path: '/persons', icon: Users, label: '仲間' },
-  { path: '/stats', icon: BarChart3, label: '統計' },
+  { path: '/timeline', icon: Clock, label: 'タイムライン' },
 ] as const
 
 export function Layout() {

@@ -20,7 +20,6 @@ export function PersonPicker({ value, onChange, label }: Props) {
   const { persons, addPerson } = usePersonStore()
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [newName, setNewName] = useState('')
-  const [newNote, setNewNote] = useState('')
 
   const selectedPerson = persons.find((p) => p.id === value)
 
@@ -70,21 +69,12 @@ export function PersonPicker({ value, onChange, label }: Props) {
                 autoFocus
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">メモ（任意）</label>
-              <Input
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="例: テニスベアで知り合った"
-              />
-            </div>
             <Button
               onClick={() => {
                 if (newName.trim()) {
-                  const person = addPerson(newName.trim(), newNote.trim() || undefined)
+                  const person = addPerson(newName.trim())
                   onChange(person.id)
                   setNewName('')
-                  setNewNote('')
                   setShowAddSheet(false)
                 }
               }}

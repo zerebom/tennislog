@@ -1,15 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { nanoid } from 'nanoid'
-import type { Person, RelativeLevel } from '@/types'
+import type { Person } from '@/types'
 
 interface PersonState {
   persons: Person[]
-  addPerson: (name: string, note?: string) => Person
+  addPerson: (name: string) => Person
   updatePerson: (id: string, data: Partial<Omit<Person, 'id' | 'createdAt'>>) => void
   deletePerson: (id: string) => void
   getPerson: (id: string) => Person | undefined
-  setRelativeLevel: (id: string, level: RelativeLevel) => void
   searchPersons: (query: string) => Person[]
 }
 
@@ -18,14 +17,12 @@ export const usePersonStore = create<PersonState>()(
     (set, get) => ({
       persons: [],
 
-      addPerson: (name, note) => {
+      addPerson: (name) => {
         const now = new Date().toISOString()
         const person: Person = {
           id: nanoid(),
           name,
-          note,
           createdAt: now,
-          updatedAt: now,
         }
         set((state) => ({ persons: [...state.persons, person] }))
         return person
@@ -34,7 +31,7 @@ export const usePersonStore = create<PersonState>()(
       updatePerson: (id, data) => {
         set((state) => ({
           persons: state.persons.map((p) =>
-            p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p
+            p.id === id ? { ...p, ...data } : p
           ),
         }))
       },
@@ -46,14 +43,6 @@ export const usePersonStore = create<PersonState>()(
       },
 
       getPerson: (id) => get().persons.find((p) => p.id === id),
-
-      setRelativeLevel: (id, level) => {
-        set((state) => ({
-          persons: state.persons.map((p) =>
-            p.id === id ? { ...p, relativeLevel: level, updatedAt: new Date().toISOString() } : p
-          ),
-        }))
-      },
 
       searchPersons: (query) => {
         const q = query.toLowerCase()

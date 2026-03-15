@@ -3,14 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useProfileStore } from '@/stores/useProfileStore'
-import type { UserProfile } from '@/types'
 
 type Step = 'welcome' | 'profile' | 'invite'
 
 export function OnboardingPage() {
   const [step, setStep] = useState<Step>('welcome')
   const [nickname, setNickname] = useState('')
-  const [experience, setExperience] = useState<string>('')
   const navigate = useNavigate()
   const { setProfile, completeOnboarding } = useProfileStore()
 
@@ -51,39 +49,9 @@ export function OnboardingPage() {
                 placeholder="例: テニス太郎"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">テニス歴（任意）</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['< 1 year', '1-3 years', '3-5 years', '5+ years'] as const).map((exp) => {
-                  const labels: Record<string, string> = {
-                    '< 1 year': '1年未満',
-                    '1-3 years': '1〜3年',
-                    '3-5 years': '3〜5年',
-                    '5+ years': '5年以上',
-                  }
-                  return (
-                    <button
-                      key={exp}
-                      onClick={() => setExperience(exp === experience ? '' : exp)}
-                      className={`rounded-lg border p-3 text-sm transition-colors ${
-                        experience === exp
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border bg-card'
-                      }`}
-                    >
-                      {labels[exp]}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
             <Button
               onClick={() => {
-                setProfile({
-                  nickname,
-                  experience: experience as UserProfile['experience'],
-                  onboardingCompleted: false,
-                })
+                setProfile({ nickname, onboardingCompleted: false })
                 setStep('invite')
               }}
               disabled={!nickname.trim()}
@@ -118,7 +86,7 @@ export function OnboardingPage() {
                 completeOnboarding()
                 navigate(path)
               }}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors active:bg-accent"
+              className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors active:bg-accent"
             >
               <span className="text-2xl">{emoji}</span>
               <span className="text-base font-medium">{label}</span>
