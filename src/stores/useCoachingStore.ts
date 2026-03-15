@@ -6,6 +6,7 @@ interface CoachingState {
   coachingResponses: CoachingResponse[]
   addCoachingResponse: (response: CoachingResponse) => void
   getBySessionId: (sessionId: string) => CoachingResponse | undefined
+  clearAll: () => void
 }
 
 export const useCoachingStore = create<CoachingState>()(
@@ -22,6 +23,8 @@ export const useCoachingStore = create<CoachingState>()(
       getBySessionId: (sessionId) => {
         return get().coachingResponses.find((r) => r.sessionId === sessionId)
       },
+
+      clearAll: () => set({ coachingResponses: [] }),
     }),
     { name: 'coaching-storage' }
   )

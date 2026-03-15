@@ -10,6 +10,7 @@ interface PersonState {
   deletePerson: (id: string) => void
   getPerson: (id: string) => Person | undefined
   searchPersons: (query: string) => Person[]
+  clearAll: () => void
 }
 
 export const usePersonStore = create<PersonState>()(
@@ -48,6 +49,8 @@ export const usePersonStore = create<PersonState>()(
         const q = query.toLowerCase()
         return get().persons.filter((p) => p.name.toLowerCase().includes(q))
       },
+
+      clearAll: () => set({ persons: [] }),
     }),
     { name: 'tennislog-persons' }
   )

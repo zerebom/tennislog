@@ -19,6 +19,7 @@ interface SessionState {
   updateSession: (id: string, data: Partial<Session>) => void
   deleteSession: (id: string) => void
   getSessionsByPerson: (personId: string) => Session[]
+  clearAll: () => void
 }
 
 export const useSessionStore = create<SessionState>()(
@@ -62,6 +63,8 @@ export const useSessionStore = create<SessionState>()(
           (s) => s.opponentId === personId || s.partnerId === personId
         )
       },
+
+      clearAll: () => set({ sessions: [] }),
     }),
     { name: 'sessions-storage' }
   )

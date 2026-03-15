@@ -45,8 +45,8 @@ export function SessionDetailPage() {
 
   if (!session) {
     return (
-      <div className="mx-auto max-w-md px-4 py-6 text-center">
-        <p className="text-sm text-muted-foreground">セッションが見つかりません</p>
+      <div className="mx-auto max-w-md px-5 py-6">
+        <p className="text-[15px] text-muted-foreground">セッションが見つかりません</p>
         <Button className="mt-4" onClick={() => navigate('/')}>
           ホームへ戻る
         </Button>
@@ -90,33 +90,37 @@ export function SessionDetailPage() {
     setIsEditing(false)
   }
 
+  const scoreText = session.sets && session.sets.length > 0
+    ? session.sets.map((s) => `${s.myScore}-${s.opponentScore}`).join('  ')
+    : ''
+
   return (
-    <div className="mx-auto max-w-md px-4 py-6 space-y-4">
+    <div className="mx-auto max-w-md px-5 pt-[48px]">
       {/* Header */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mb-6">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-1 text-sm text-muted-foreground"
+          className="flex items-center gap-1.5 text-[14px] text-muted-foreground"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-5 w-5" />
           ホームへ
         </button>
       </div>
 
       {/* タイトル行: 種別タグ + 日付 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#1B7A4A]/10 px-3 py-0.5 text-xs font-medium text-[#1B7A4A]">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <span className="rounded-full bg-[var(--primary-light)] px-3 py-1 text-[14px] font-medium text-primary">
             {typeLabel[session.type]}
           </span>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-[14px] text-muted-foreground">
             {format(new Date(session.date), 'M月d日(E)', { locale: ja })}
           </span>
         </div>
         {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
-            className="text-sm text-primary"
+            className="text-[14px] text-primary font-medium"
           >
             編集
           </button>
@@ -125,48 +129,45 @@ export function SessionDetailPage() {
       </div>
 
       {/* スコア + WIN/LOSE バッジ（試合の場合） */}
-      {session.type !== 'practice' && session.sets && session.sets.length > 0 && !isEditing && (
-        <div className="flex items-center gap-3">
-          <span
-            className={`rounded-full px-3 py-0.5 text-xs font-bold ${
-              session.result === 'win'
-                ? 'bg-[#1B7A4A] text-white'
-                : 'bg-[#D4483B] text-white'
-            }`}
-          >
-            {session.result === 'win' ? 'WIN' : 'LOSE'}
+      {session.type !== 'practice' && scoreText && !isEditing && (
+        <div className="flex items-center gap-4 mb-6">
+          <span className="font-score text-[46px] font-medium leading-none tracking-[0.02em]">
+            {scoreText}
           </span>
-          <div className="flex gap-2">
-            {session.sets.map((s, i) => (
-              <span key={i} className="text-sm font-medium">
-                {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}: {s.myScore}-{s.opponentScore}
-              </span>
-            ))}
-          </div>
+          {session.result && (
+            <span
+              className="font-score-compact rounded-full px-4 py-1 text-[14px] font-semibold text-white"
+              style={{
+                backgroundColor: session.result === 'win' ? 'var(--primary)' : 'var(--destructive)',
+              }}
+            >
+              {session.result === 'win' ? 'WIN' : 'LOSE'}
+            </span>
+          )}
         </div>
       )}
 
       {/* vs. 相手名 */}
       {opponent && !isEditing && (
-        <p className="text-sm text-muted-foreground">vs. {opponent.name}さん</p>
+        <p className="text-[15px] text-muted-foreground mb-4">vs. {opponent.name}さん</p>
       )}
 
       {/* パートナー名 */}
       {partner && !isEditing && (
-        <p className="text-sm text-muted-foreground">パートナー: {partner.name}さん</p>
+        <p className="text-[15px] text-muted-foreground mb-4">パートナー: {partner.name}さん</p>
       )}
 
       {isEditing ? (
         /* Edit Mode */
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Date */}
           <div>
-            <label className="mb-1 block text-sm font-medium">日付</label>
+            <label className="mb-2 block text-[14px] font-medium">日付</label>
             <input
               type="date"
               value={editDate}
               onChange={(e) => setEditDate(e.target.value)}
-              className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm"
+              className="h-12 w-full rounded-[12px] border-[1.5px] border-border bg-background px-5 text-base"
             />
           </div>
 
@@ -195,60 +196,67 @@ export function SessionDetailPage() {
 
           {/* Memo */}
           <div>
-            <label className="mb-1 block text-sm font-medium">メモ（任意）</label>
+            <label className="mb-2 block text-[14px] font-medium">メモ（任意）</label>
             <textarea
               value={editMemo}
               onChange={(e) => setEditMemo(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm resize-none"
+              rows={4}
+              className="w-full rounded-[12px] border-[1.5px] border-border bg-background px-5 py-3.5 text-base resize-none leading-[1.7]"
               placeholder="今日のテニスで気づいたことを書いてください"
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button variant="outline" className="flex-1" onClick={handleCancelEdit}>
               キャンセル
             </Button>
             <Button className="flex-1" onClick={handleSave}>
-              保存
+              保存する
             </Button>
           </div>
 
           {/* Delete */}
           <Button variant="destructive" className="w-full" onClick={() => setShowDeleteDialog(true)}>
-            削除
+            削除する
           </Button>
         </div>
       ) : (
         /* View Mode */
-        <div className="space-y-4">
+        <div>
           {/* メモセクション */}
-          <div>
-            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">メモ</h2>
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="flex">
-                <div className="w-1 shrink-0 bg-[#1B7A4A]" />
-                <div className="px-4 py-3">
-                  {session.memo ? (
-                    <p className="text-sm whitespace-pre-wrap">{session.memo}</p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">メモなし</p>
-                  )}
-                </div>
+          <section className="mb-[44px]">
+            <h2 className="section-title text-[24px] font-extrabold leading-[1.3] tracking-[-0.02em] text-foreground mb-4">
+              メモ
+            </h2>
+            {session.memo ? (
+              <div className="border-l-[3px] border-border pl-5">
+                <p className="text-[15px] leading-[1.7] whitespace-pre-wrap">{session.memo}</p>
               </div>
-            </div>
-          </div>
+            ) : (
+              <p className="text-[15px] text-muted-foreground">メモなし</p>
+            )}
+          </section>
 
           {/* AIコーチングセクション */}
-          <div>
-            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">AIコーチング</h2>
+          <section className="mb-[44px]">
+            <h2 className="section-title text-[24px] font-extrabold leading-[1.3] tracking-[-0.02em] text-foreground mb-4">
+              AIコーチング
+            </h2>
             <CoachingCard coaching={coaching} />
-          </div>
+          </section>
+
+          {/* ホームへ戻る */}
+          <Button className="w-full mb-4" onClick={() => navigate('/')}>
+            ホームへ戻る
+          </Button>
 
           {/* Delete */}
-          <Button variant="destructive" className="w-full" onClick={() => setShowDeleteDialog(true)}>
-            削除
-          </Button>
+          <button
+            className="w-full text-[14px] text-muted-foreground py-2"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            このセッションを削除
+          </button>
 
           <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
             <DialogContent>

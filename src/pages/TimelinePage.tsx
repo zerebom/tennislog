@@ -25,7 +25,11 @@ export function TimelinePage() {
   const [currentMonth, setCurrentMonth] = useState(() => new Date())
 
   const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    () => [...sessions].sort((a, b) => {
+      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime()
+      if (dateDiff !== 0) return dateDiff
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    }),
     [sessions]
   )
 
@@ -49,8 +53,8 @@ export function TimelinePage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6 space-y-6">
-      <h1 className="text-xl font-bold">タイムライン</h1>
+    <div className="mx-auto max-w-md px-5 pt-[48px]">
+      <h1 className="text-[28px] font-extrabold leading-[1.3] tracking-[-0.02em] mb-[44px]">タイムライン</h1>
 
       {/* カレンダービュー */}
       <section>
@@ -118,10 +122,7 @@ export function TimelinePage() {
                 {/* テニスした日のドット */}
                 <div className="h-1.5 mt-0.5">
                   {hasMatch && (
-                    <div
-                      className="h-1.5 w-1.5 rounded-full"
-                      style={{ backgroundColor: '#1B7A4A' }}
-                    />
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                   )}
                 </div>
               </div>
@@ -131,17 +132,17 @@ export function TimelinePage() {
       </section>
 
       {/* セッション一覧 */}
-      <section>
-        <h2 className="mb-3 text-base font-semibold text-foreground">すべての記録</h2>
+      <section className="mt-[44px] mb-[44px]">
+        <h2 className="section-title text-[24px] font-extrabold leading-[1.3] tracking-[-0.02em] text-foreground mb-4">すべての記録</h2>
 
         {sortedSessions.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card px-6 py-10 text-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="py-8">
+            <p className="text-[15px] text-muted-foreground leading-[1.7]">
               まだ記録がありません。テニスの後にメモを書いてみましょう
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {sortedSessions.map((session) => (
               <SessionCard
                 key={session.id}

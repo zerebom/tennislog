@@ -7,6 +7,7 @@ import { RecordDoublesPage } from '@/pages/RecordDoublesPage'
 import { RecordPracticePage } from '@/pages/RecordPracticePage'
 import { SessionDetailPage } from '@/pages/SessionDetailPage'
 import { TimelinePage } from '@/pages/TimelinePage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { LoginPage } from '@/pages/LoginPage'
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/timeline" element={<TimelinePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="/record/singles" element={<RecordSinglesPage />} />
       <Route path="/record/doubles" element={<RecordDoublesPage />} />
